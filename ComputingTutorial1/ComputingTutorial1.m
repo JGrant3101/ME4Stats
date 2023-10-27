@@ -148,3 +148,19 @@ legend('bw = default', 'bw = 10', 'bw = 2')
 
 
 %% Part 3 Plotting consecutive eruption waiting times
+% Wants us to generate a plot for each day plotting the waiting times
+% consecutively
+% Generate a figure first 
+figure
+% Write a for loop 
+for i = 1:max(Data.day)
+    subplot(3, 5, i)
+    PlottingIndices = find(Data.day == i);
+    plot(Data.waiting(PlottingIndices))
+    if i == 1 || i == 6 || i == 11
+        ylabel("Waiting time (mins)")
+    end
+    xlim([0, 15])
+    ylim([0, 120])
+    title("Day " + num2str(i))
+end
