@@ -164,3 +164,52 @@ for i = 1:max(Data.day)
     ylim([0, 120])
     title("Day " + num2str(i))
 end
+
+%% Part 4 Scatterplots and linear regression
+% First find the number of data points
+n = length(Data.day);
+% Want to create an array containing the lagged values of duration
+lagduration = lagmatrix(Data.duration, 1);
+
+% Plotting waiting time against the previous duration of eruption
+figure
+scatter(lagduration, Data.waiting)
+xlabel('Previous duration (minutes)')
+ylabel('Waiting time (minutes)')
+
+% Performing a linear regression
+B = regress(Data.waiting, [ones(n,1) lagduration]);
+
+% Calculating a line of best fit
+waitingest = B(1) + B(2) * lagduration;
+
+% Plotting the line of best fit with the raw points
+hold on
+plot(lagduration, waitingest)
+
+% Plot suggests there is more two groupings around duration of previous
+% eruptions and the subsquent waiting time for the next one than their is a
+% linear relationship between the two. Linear fit not appropriate. 
+
+%% Part 5 K-means clustering 
+% Making a new scatter of waiting time against previous eruption duration
+figure
+scatter(lagduration, Data.waiting)
+xlabel('Previous duration (minutes)')
+ylabel('Waiting time (minutes)')
+hold on
+% This shows two distinct groupings of eruptions
+
+% Clustering
+C = kmeans([lagduration, Data.waiting], 2);
+
+% define some colours
+ col{1} = 'r'; col{2} = 'g';
+% for each class
+for c = 1 : 2
+ % find data with class equal to "c" and store locations in "loc"
+ loc = find( C == c );
+ % plot using "o" and no line and different colours
+ plot(lagduration(loc), Data.waiting(loc), 'color', col{c}, ...
+ 'marker', 'o', 'markersize', 4, 'LineStyle', 'None');
+end
