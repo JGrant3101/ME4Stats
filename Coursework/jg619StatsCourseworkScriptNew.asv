@@ -311,7 +311,19 @@ else
     disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
 end
 
+% Plotting Q-Q plots
+% Firstly for CO from T
+tiledlayout(1, 3)
+nexttile
+qqplot(COfromTresidual)
 
+% Then for CO from RH
+nexttile
+qqplot(COfromRHresidual)
+
+% Then for CO from T and RH
+nexttile
+qqplot(COfromTandRHresidual)
 %% Question 3b
 close all 
 clc
@@ -393,52 +405,13 @@ disp(['The adjusted coeffecient of determination for CO vs Day is: ', num2str(CO
 disp(['The adjusted coeffecient of determination for CO vs sqrt(Day) is: ', num2str(COvssqrtdaymodel.Rsquared.Adjusted)])
 disp(' ')
 
-% As we want to go on to compare the residuals need to do the cross fold
-% validation
-fold1day = day(1:num);
-fold2day = day(num+1:end);
-
-fold1sqrtday = sqrtday(1:num);
-fold2sqrtday = sqrtday(num+1:end);
-
-% Now want to build the same set of models for both datasets and use them
-% to predict the CO values for the other dataset
-
-% Start with fold1 models
-% Firstly CO vs Day
-COvsdaymodel1 = fitlm(fold1day, fold1CO, 'VarNames', {'Day', 'CO'});
-
-% Then CO vs sqrt(Day)
-COvssqrtdaymodel1 = fitlm(fold1sqrtday, fold1CO, 'VarNames', {'sqrt(Day)', 'CO'});
-
-% Next do the fold2 models
-% Firstly CO vs Day
-COvsdaymodel2 = fitlm(fold2day, fold2CO, 'VarNames', {'Day', 'CO'});
-
-% Then CO vs sqrt(Day)
-COvssqrtdaymodel2 = fitlm(fold2sqrtday, fold2CO, 'VarNames', {'sqrt(Day)', 'CO'});
-
-% Now want to use the model based on each dataset to predict results for
-% the other dataset
-% Predicting values for fold1 first, so using the fold2 models
-fold1COpredfromday = predict(COvsdaymodel2, fold1day);
-fold1COpredfromsqrtday = predict(COvssqrtdaymodel2, fold1sqrtday);
-
-% Now predicting the fold2 values
-fold2COpredfromday = predict(COvsdaymodel1, fold2day);
-fold2COpredfromsqrtday = predict(COvssqrtdaymodel1, fold2sqrtday);
+% Now want to use the models based to predict results 
+COpredfromday = predict(COvsdaymodel, day);
+COpredfromsqrtday = predict(COvssqrtdaymodel, sqrtday);
 
 % Finding the residuals for each set of predictions
-fold1COfromdayresidual = fold1COpredfromday - fold1CO;
-fold1COfromsqrtdayresidual = fold1COpredfromsqrtday - fold1CO;
-
-fold2COfromdayresidual = fold2COpredfromday - fold2CO;
-fold2COfromsqrtdayresidual = fold2COpredfromsqrtday - fold2CO;
-
-% Combining these residuals into a single array per feature
-COfromdayresidual = [fold1COfromdayresidual; fold2COfromdayresidual];
-
-COfromsqrtdayresidual = [fold1COfromsqrtdayresidual; fold2COfromsqrtdayresidual];
+COfromdayresidual = COpredfromday - CO;
+COfromsqrtdayresidual = COpredfromsqrtday - CO;
 
 % Can now find the normality of these residuals
 % Firstly the residual for CO predicted from Day
@@ -479,6 +452,23 @@ disp(['The sum of squares of the residuals of CO from Day is: ', num2str(COfromd
 
 disp(['The sum of squares of the residuals of CO from sqrt(Day) is: ', num2str(COfromsqrtdayresidualSumofSquares)])
 
+% Plotting
+% Want to produce a scatter plot of CO vs day
+figure
+scatter(sqrtday, CO, 'filled')
+xlabel('sqrt(day)')
+ylabel('Carbon monoxide concentration (mg/m^3)')
+title('CO concentration versus day')
+
+% Plotting Q-Q plots
+% Firstly for CO from Day
+tiledlayout(1, 2)
+nexttile
+qqplot(COfromdayresidual)
+
+% Then for CO from sqrt(Day)
+nexttile
+qqplot(COfromsqrtdayresidual)
 %% Question 4c
 close all 
 clc
@@ -504,43 +494,16 @@ disp(['The adjusted coeffecient of determination for CO vs T, RH and Day is: ', 
 disp(['The adjusted coeffecient of determination for CO vs T, RH and sqrt(Day) is: ', num2str(COvsTRHandsqrtDaymodel.Rsquared.Adjusted)])
 disp(' ')
 
-% Now want to do the linear regressions to get normality and sum of squares
-% of residuals
-% Will start by generating the models for CO vs T, RH and Day and CO vs T,
-% RH and sqrt(Day)
-% Start by making the arrays of independent variables
-linmodelarray5 = [fold1T, fold1RH, fold1day];
-linmodelarray6 = [fold1T, fold1RH, fold1sqrtday];
-
-linmodelarray7 = [fold2T, fold2RH, fold2day];
-linmodelarray8 = [fold2T, fold2RH, fold2sqrtday];
-
-% Now fitting the linear models
-COvsTRHandDaymodel1 = fitlm(linmodelarray5, fold1CO, 'VarNames', {'T', 'RH', 'Day', 'CO'});
-COvsTRHandsqrtDaymodel1 = fitlm(linmodelarray6, fold1CO, 'VarNames', {'T', 'RH', 'sqrt(Day)', 'CO'});
-
-COvsTRHandDaymodel2 = fitlm(linmodelarray7, fold2CO, 'VarNames', {'T', 'RH', 'Day', 'CO'});
-COvsTRHandsqrtDaymodel2 = fitlm(linmodelarray8, fold2CO, 'VarNames', {'T', 'RH', 'sqrt(Day)', 'CO'});
+% Now can use these models to find the residuals for every point
 
 % Predicting results for the other dataset, starting with fold1 predictions
 % so using the fold2 model
-fold1COpredfromTRHandDay = predict(COvsTRHandDaymodel2, linmodelarray5);
-fold1COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel2, linmodelarray6);
-
-% Now getting the fold2 predictions based on the fold1 model
-fold2COpredfromTRHandDay = predict(COvsTRHandDaymodel1, linmodelarray7);
-fold2COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel1, linmodelarray8);
+COpredfromTRHandDay = predict(COvsTRHandDaymodel, linmodelarray3);
+COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel, linmodelarray4);
 
 % Now can find the residuals for each
-fold1COfromTRHandDayresidual = fold1COpredfromTRHandDay - fold1CO;
-fold1COfromTRHandsqrtDayresidual = fold1COpredfromTRHandsqrtDay - fold1CO;
-
-fold2COfromTRHandDayresidual = fold2COpredfromTRHandDay - fold2CO;
-fold2COfromTRHandsqrtDayresidual = fold2COpredfromTRHandsqrtDay - fold2CO;
-
-% Combining these into arrays of residuals for the whole dataset
-COfromTRHandDayresidual = [fold1COfromTRHandDayresidual; fold2COfromTRHandDayresidual];
-COfromTRHandsqrtDayresidual = [fold1COfromTRHandsqrtDayresidual; fold2COfromTRHandsqrtDayresidual];
+COfromTRHandDayresidual = COpredfromTRHandDay - CO;
+COfromTRHandsqrtDayresidual = COpredfromTRHandsqrtDay - CO;
 
 % Can now find the normality of these residuals
 % Firstly the residual for CO predicted from T, RH and Day
@@ -579,16 +542,35 @@ disp(' ')
 
 % And now find the sum of the squares of the residuals and print those
 % values
-% Firstly do this for CO from Day
+% Firstly do this for CO from T and RH
+COfromTandRHresidualSumofSquares = sum(COfromTandRHresidual.^2);
+
+% Then do this for CO from T, RH and day
 COfromTRHandDayresidualSumofSquares = sum(COfromTRHandDayresidual.^2);
 
-% Then do this for CO from sqrt(Day)
+% Then do this for CO from T, RH and sqrt(day)
 COfromTRHandsqrtDayresidualSumofSquares = sum(COfromTRHandsqrtDayresidual.^2);
 
 % Printing these
+disp(['The sum of squares of the residuals of CO from Tand RH is: ', num2str(COfromTandRHresidualSumofSquares)])
+
 disp(['The sum of squares of the residuals of CO from T, RH and Day is: ', num2str(COfromdayresidualSumofSquares)])
 
 disp(['The sum of squares of the residuals of CO from T, RH and sqrt(Day) is: ', num2str(COfromsqrtdayresidualSumofSquares)])
+
+% Plotting Q-Q plots
+% Firstly for CO from T
+tiledlayout(1, 3)
+nexttile
+qqplot(COfromTandRHresidual)
+
+% Then for CO from RH
+nexttile
+qqplot(COfromTRHandDayresidual)
+
+% Then for CO from T and RH
+nexttile
+qqplot(COfromTRHandsqrtDayresidual)
 
 %% Functions
 function [H, pValue, W] = swtest(x, alpha)
@@ -853,6 +835,7 @@ function [H, pValue, W] = swtest(x, alpha)
     % that we 'Reject the null hypothesis at significance level of alpha.'
     %
     
-    H  = (alpha >= pValue);
+    
     end
+    H  = (alpha >= pValue);
 end

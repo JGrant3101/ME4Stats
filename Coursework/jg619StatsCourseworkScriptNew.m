@@ -272,7 +272,7 @@ COfromTresidual = [fold1COfromTresidual; fold2COfromTresidual];
 COfromRHresidual = [fold1COfromRHresidual; fold2COfromRHresidual];
 
 % And finally for CO from T and RH
-COfromTandRHresidual = [fold1COfromTandRHresidual; fold2COfromTandRHresidual];
+COfromTandRHresidualfolds = [fold1COfromTandRHresidual; fold2COfromTandRHresidual];
 
 % Now running the Shapiro-Wilk test on these arrays
 % Firstly for CO predicted from T
@@ -282,7 +282,7 @@ COfromTandRHresidual = [fold1COfromTandRHresidual; fold2COfromTandRHresidual];
 [HCOfromRHresidual, pValueCOfromRHresidual, WCOfromRHresidual] = swtest(COfromRHresidual, 0.05);
 
 % Then for CO predicted from T and RH
-[HCOfromTandRHresidual, pValueCOfromTandRHresidual, WCOfromTandRHresidual] = swtest(COfromTandRHresidual, 0.05);
+[HCOfromTandRHresidualfolds, pValueCOfromTandRHresidualfolds, WCOfromTandRHresidualfolds] = swtest(COfromTandRHresidualfolds, 0.05);
 
 % Printing values
 disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from T coming from a normal distribution is: ', num2str(pValueCOfromTresidual)])
@@ -297,21 +297,33 @@ disp(' ')
 disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from RH coming from a normal distribution is: ', num2str(pValueCOfromRHresidual)])
 
 if ~HCOfromRHresidual
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T cannot be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from RH cannot be said to not come from a normal distribution')
 else
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from RH can be said to not come from a normal distribution')
 end
 
 disp(' ')
-disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from T and RH coming from a normal distribution is: ', num2str(pValueCOfromTandRHresidual)])
+disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from T and RH coming from a normal distribution is: ', num2str(pValueCOfromTandRHresidualfolds)])
 
-if ~HCOfromTandRHresidual
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T cannot be said to not come from a normal distribution')
+if ~HCOfromTandRHresidualfolds
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T and RH cannot be said to not come from a normal distribution')
 else
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T and RH can be said to not come from a normal distribution')
 end
 
+% Plotting Q-Q plots
+% Firstly for CO from T
+tiledlayout(1, 3)
+nexttile
+qqplot(COfromTresidual)
 
+% Then for CO from RH
+nexttile
+qqplot(COfromRHresidual)
+
+% Then for CO from T and RH
+nexttile
+qqplot(COfromTandRHresidualfolds)
 %% Question 3b
 close all 
 clc
@@ -326,14 +338,14 @@ COfromTresidualSumofSquares = sum(COfromTresidual.^2);
 COfromRHresidualSumofSquares = sum(COfromRHresidual.^2);
 
 % Finall for CO from T and RH
-COfromTandRHresidualSumofSquares = sum(COfromTandRHresidual.^2);
+COfromTandRHresidualfoldsSumofSquares = sum(COfromTandRHresidualfolds.^2);
 
 % Then print the three values
 disp(['The sum of squares of the residuals of CO from T is: ', num2str(COfromTresidualSumofSquares)])
 
 disp(['The sum of squares of the residuals of CO from RH is: ', num2str(COfromRHresidualSumofSquares)])
 
-disp(['The sum of squares of the residuals of CO from T and RH is: ', num2str(COfromTandRHresidualSumofSquares)])
+disp(['The sum of squares of the residuals of CO from T and RH is: ', num2str(COfromTandRHresidualfoldsSumofSquares)])
 
 %% Question 4
 close all
@@ -360,7 +372,7 @@ RCOvsday = corr2(day, CO);
 % And build a linear regression model
 COvsdaymodel = fitlm(day, CO, 'VarNames', {'Day', 'CO'});
 
-% Printing the adjusted correlations coefficient and coefficient of 
+% Printing the correlation coefficient and adjusted coefficient of 
 % determination for the model
 disp(['The correlation coefficient for CO vs Day is: ', num2str(RCOvsday)])
 
@@ -393,52 +405,13 @@ disp(['The adjusted coeffecient of determination for CO vs Day is: ', num2str(CO
 disp(['The adjusted coeffecient of determination for CO vs sqrt(Day) is: ', num2str(COvssqrtdaymodel.Rsquared.Adjusted)])
 disp(' ')
 
-% As we want to go on to compare the residuals need to do the cross fold
-% validation
-fold1day = day(1:num);
-fold2day = day(num+1:end);
-
-fold1sqrtday = sqrtday(1:num);
-fold2sqrtday = sqrtday(num+1:end);
-
-% Now want to build the same set of models for both datasets and use them
-% to predict the CO values for the other dataset
-
-% Start with fold1 models
-% Firstly CO vs Day
-COvsdaymodel1 = fitlm(fold1day, fold1CO, 'VarNames', {'Day', 'CO'});
-
-% Then CO vs sqrt(Day)
-COvssqrtdaymodel1 = fitlm(fold1sqrtday, fold1CO, 'VarNames', {'sqrt(Day)', 'CO'});
-
-% Next do the fold2 models
-% Firstly CO vs Day
-COvsdaymodel2 = fitlm(fold2day, fold2CO, 'VarNames', {'Day', 'CO'});
-
-% Then CO vs sqrt(Day)
-COvssqrtdaymodel2 = fitlm(fold2sqrtday, fold2CO, 'VarNames', {'sqrt(Day)', 'CO'});
-
-% Now want to use the model based on each dataset to predict results for
-% the other dataset
-% Predicting values for fold1 first, so using the fold2 models
-fold1COpredfromday = predict(COvsdaymodel2, fold1day);
-fold1COpredfromsqrtday = predict(COvssqrtdaymodel2, fold1sqrtday);
-
-% Now predicting the fold2 values
-fold2COpredfromday = predict(COvsdaymodel1, fold2day);
-fold2COpredfromsqrtday = predict(COvssqrtdaymodel1, fold2sqrtday);
+% Now want to use the models based to predict results 
+COpredfromday = predict(COvsdaymodel, day);
+COpredfromsqrtday = predict(COvssqrtdaymodel, sqrtday);
 
 % Finding the residuals for each set of predictions
-fold1COfromdayresidual = fold1COpredfromday - fold1CO;
-fold1COfromsqrtdayresidual = fold1COpredfromsqrtday - fold1CO;
-
-fold2COfromdayresidual = fold2COpredfromday - fold2CO;
-fold2COfromsqrtdayresidual = fold2COpredfromsqrtday - fold2CO;
-
-% Combining these residuals into a single array per feature
-COfromdayresidual = [fold1COfromdayresidual; fold2COfromdayresidual];
-
-COfromsqrtdayresidual = [fold1COfromsqrtdayresidual; fold2COfromsqrtdayresidual];
+COfromdayresidual = COpredfromday - CO;
+COfromsqrtdayresidual = COpredfromsqrtday - CO;
 
 % Can now find the normality of these residuals
 % Firstly the residual for CO predicted from Day
@@ -451,18 +424,18 @@ COfromsqrtdayresidual = [fold1COfromsqrtdayresidual; fold2COfromsqrtdayresidual]
 disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from Day coming from a normal distribution is: ', num2str(pValueCOfromdayresidual)])
 
 if ~HCOfromdayresidual
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T cannot be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from Day cannot be said to not come from a normal distribution')
 else
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from Day can be said to not come from a normal distribution')
 end
 
 disp(' ')
 disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from sqrt(Day) coming from a normal distribution is: ', num2str(pValueCOfromsqrtdayresidual)])
 
 if ~HCOfromsqrtdayresidual
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T cannot be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from sqrt(Day) cannot be said to not come from a normal distribution')
 else
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from sqrt(Day) can be said to not come from a normal distribution')
 end
 disp(' ')
 
@@ -479,6 +452,23 @@ disp(['The sum of squares of the residuals of CO from Day is: ', num2str(COfromd
 
 disp(['The sum of squares of the residuals of CO from sqrt(Day) is: ', num2str(COfromsqrtdayresidualSumofSquares)])
 
+% Plotting
+% Want to produce a scatter plot of CO vs day
+figure
+scatter(sqrtday, CO, 'filled')
+xlabel('sqrt(day)')
+ylabel('Carbon monoxide concentration (mg/m^3)')
+title('CO concentration versus day')
+
+% Plotting Q-Q plots
+% Firstly for CO from Day
+tiledlayout(1, 2)
+nexttile
+qqplot(COfromdayresidual)
+
+% Then for CO from sqrt(Day)
+nexttile
+qqplot(COfromsqrtdayresidual)
 %% Question 4c
 close all 
 clc
@@ -504,46 +494,23 @@ disp(['The adjusted coeffecient of determination for CO vs T, RH and Day is: ', 
 disp(['The adjusted coeffecient of determination for CO vs T, RH and sqrt(Day) is: ', num2str(COvsTRHandsqrtDaymodel.Rsquared.Adjusted)])
 disp(' ')
 
-% Now want to do the linear regressions to get normality and sum of squares
-% of residuals
-% Will start by generating the models for CO vs T, RH and Day and CO vs T,
-% RH and sqrt(Day)
-% Start by making the arrays of independent variables
-linmodelarray5 = [fold1T, fold1RH, fold1day];
-linmodelarray6 = [fold1T, fold1RH, fold1sqrtday];
+% Now can use these models to find the residuals for every point
 
-linmodelarray7 = [fold2T, fold2RH, fold2day];
-linmodelarray8 = [fold2T, fold2RH, fold2sqrtday];
-
-% Now fitting the linear models
-COvsTRHandDaymodel1 = fitlm(linmodelarray5, fold1CO, 'VarNames', {'T', 'RH', 'Day', 'CO'});
-COvsTRHandsqrtDaymodel1 = fitlm(linmodelarray6, fold1CO, 'VarNames', {'T', 'RH', 'sqrt(Day)', 'CO'});
-
-COvsTRHandDaymodel2 = fitlm(linmodelarray7, fold2CO, 'VarNames', {'T', 'RH', 'Day', 'CO'});
-COvsTRHandsqrtDaymodel2 = fitlm(linmodelarray8, fold2CO, 'VarNames', {'T', 'RH', 'sqrt(Day)', 'CO'});
-
-% Predicting results for the other dataset, starting with fold1 predictions
-% so using the fold2 model
-fold1COpredfromTRHandDay = predict(COvsTRHandDaymodel2, linmodelarray5);
-fold1COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel2, linmodelarray6);
-
-% Now getting the fold2 predictions based on the fold1 model
-fold2COpredfromTRHandDay = predict(COvsTRHandDaymodel1, linmodelarray7);
-fold2COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel1, linmodelarray8);
+% Predicting results for the models
+COpredfromTandRH = predict(COvsTandRHmodel, linmodelarray);
+COpredfromTRHandDay = predict(COvsTRHandDaymodel, linmodelarray3);
+COpredfromTRHandsqrtDay = predict(COvsTRHandsqrtDaymodel, linmodelarray4);
 
 % Now can find the residuals for each
-fold1COfromTRHandDayresidual = fold1COpredfromTRHandDay - fold1CO;
-fold1COfromTRHandsqrtDayresidual = fold1COpredfromTRHandsqrtDay - fold1CO;
-
-fold2COfromTRHandDayresidual = fold2COpredfromTRHandDay - fold2CO;
-fold2COfromTRHandsqrtDayresidual = fold2COpredfromTRHandsqrtDay - fold2CO;
-
-% Combining these into arrays of residuals for the whole dataset
-COfromTRHandDayresidual = [fold1COfromTRHandDayresidual; fold2COfromTRHandDayresidual];
-COfromTRHandsqrtDayresidual = [fold1COfromTRHandsqrtDayresidual; fold2COfromTRHandsqrtDayresidual];
+COfromTandRHresidual = COpredfromTandRH - CO;
+COfromTRHandDayresidual = COpredfromTRHandDay - CO;
+COfromTRHandsqrtDayresidual = COpredfromTRHandsqrtDay - CO;
 
 % Can now find the normality of these residuals
-% Firstly the residual for CO predicted from T, RH and Day
+% Firstly the residual for CO predicted from T and RH
+[HCOfromTandRHresidual, pValueCOfromTandRHresidual, WCOfromTandRHresidual] = swtest(COfromTandRHresidual, 0.05);
+
+% Then the residual for CO predicted from T, RH and Day
 [HCOfromTRHandDayresidual, pValueCOfromTRHandDayresidual, WCOfromTRHandDayresidual] = swtest(COfromTRHandDayresidual, 0.05);
 
 % Then the residual for CO predicted from sqrt(Day)
@@ -553,9 +520,9 @@ COfromTRHandsqrtDayresidual = [fold1COfromTRHandsqrtDayresidual; fold2COfromTRHa
 disp(['The probability suggested by the Shapiro-Wilks test of the residuals of CO from T and RH coming from a normal distribution is: ', num2str(pValueCOfromTandRHresidual)])
 
 if ~HCOfromTandRHresidual
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T cannot be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T and RH cannot be said to not come from a normal distribution')
 else
-    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T can be said to not come from a normal distribution')
+    disp('The Shapiro-Wilks test suggests that with a 5% significance level the residuals of CO from T and RH can be said to not come from a normal distribution')
 end
 
 disp(' ')
@@ -579,16 +546,35 @@ disp(' ')
 
 % And now find the sum of the squares of the residuals and print those
 % values
-% Firstly do this for CO from Day
+% Firstly do this for CO from T and RH
+COfromTandRHresidualSumofSquares = sum(COfromTandRHresidual.^2);
+
+% Then do this for CO from T, RH and day
 COfromTRHandDayresidualSumofSquares = sum(COfromTRHandDayresidual.^2);
 
-% Then do this for CO from sqrt(Day)
+% Then do this for CO from T, RH and sqrt(day)
 COfromTRHandsqrtDayresidualSumofSquares = sum(COfromTRHandsqrtDayresidual.^2);
 
 % Printing these
-disp(['The sum of squares of the residuals of CO from T, RH and Day is: ', num2str(COfromdayresidualSumofSquares)])
+disp(['The sum of squares of the residuals of CO from Tand RH is: ', num2str(COfromTandRHresidualSumofSquares)])
 
-disp(['The sum of squares of the residuals of CO from T, RH and sqrt(Day) is: ', num2str(COfromsqrtdayresidualSumofSquares)])
+disp(['The sum of squares of the residuals of CO from T, RH and Day is: ', num2str(COfromTRHandDayresidualSumofSquares)])
+
+disp(['The sum of squares of the residuals of CO from T, RH and sqrt(Day) is: ', num2str(COfromTRHandsqrtDayresidualSumofSquares)])
+
+% Plotting Q-Q plots
+% Firstly for CO from T
+tiledlayout(1, 3)
+nexttile
+qqplot(COfromTandRHresidual)
+
+% Then for CO from RH
+nexttile
+qqplot(COfromTRHandDayresidual)
+
+% Then for CO from T and RH
+nexttile
+qqplot(COfromTRHandsqrtDayresidual)
 
 %% Functions
 function [H, pValue, W] = swtest(x, alpha)
@@ -853,6 +839,7 @@ function [H, pValue, W] = swtest(x, alpha)
     % that we 'Reject the null hypothesis at significance level of alpha.'
     %
     
-    H  = (alpha >= pValue);
+    
     end
+    H  = (alpha >= pValue);
 end
